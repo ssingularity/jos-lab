@@ -85,12 +85,14 @@ start_overflow(void)
 
     char str[256] = {};
     int nstr = 0;
-    char *pret_addr;
-
+    char *pret_addr = (char *) read_pretaddr();
+    uint32_t overflow_addr = (uint32_t) do_overflow;
+    int i;
+    for (i = 0; i < 4; ++i)
+       cprintf("%*s%n\n", pret_addr[i] & 0xFF, "", pret_addr + 4 + i);
+    for (i = 0; i < 4; ++i)
+      cprintf("%*s%n\n", (overflow_addr >> (8*i)) & 0xFF, "", pret_addr + i);
 	// Your code here.
-    
-
-
 }
 
 void
