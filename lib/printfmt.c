@@ -33,6 +33,16 @@ static const char * const error_string[MAXERROR] =
  * using specified putch function and associated pointer putdat.
  */
 static void
+printnumHelp(void (*putch)(int, void*), void *putdat,
+	 unsigned long long num, unsigned base, int* width, int padc){
+		if (num >= base) {
+			*width = *width - 1;
+			printnumHelp(putch, putdat, num / base, base, width, padc);
+		} 
+		// then print this (the least significant) digit
+		putch("0123456789abcdef"[num % base], putdat);
+	 }
+static void
 printnum(void (*putch)(int, void*), void *putdat,
 	 unsigned long long num, unsigned base, int width, int padc)
 {
@@ -42,16 +52,23 @@ printnum(void (*putch)(int, void*), void *putdat,
 	// your code here:
 	
 	// first recursively print all preceding (more significant) digits
-	if (num >= base) {
-		printnum(putch, putdat, num / base, base, width - 1, padc);
-	} else {
-		// print any needed pad characters before first digit
+	if (padc == '-'){
+		printnumHelp(putch, putdat, num, base, &width, padc);
 		while (--width > 0)
-			putch(padc, putdat);
+			putch(' ', putdat);
 	}
+	else {
+		if (num >= base) {
+			printnum(putch, putdat, num / base, base, width - 1, padc);
+		} else {
+			// print any needed pad characters before first digit
+			while (--width > 0)
+				putch(padc, putdat);
+		}
 
-	// then print this (the least significant) digit
-	putch("0123456789abcdef"[num % base], putdat);
+		// then print this (the least significant) digit
+		putch("0123456789abcdef"[num % base], putdat);
+	}
 }
 
 // Get an unsigned int of various possible sizes from a varargs list,
@@ -92,6 +109,7 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 	unsigned long long num;
 	int base, lflag, width, precision, altflag;
 	char padc;
+	bool positiveFlag;
 
 	while (1) {
 		while ((ch = *(unsigned char *) fmt++) != '%') {
@@ -106,6 +124,7 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		precision = -1;
 		lflag = 0;
 		altflag = 0;
+		positiveFlag = false;
 	reswitch:
 		switch (ch = *(unsigned char *) fmt++) {
 
@@ -140,7 +159,9 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 		case '*':
 			precision = va_arg(ap, int);
 			goto process_precision;
-
+		case '+':
+			positiveFlag = true;
+			goto reswitch;
 		case '.':
 			if (width < 0)
 				width = 0;
@@ -199,6 +220,10 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 				putch('-', putdat);
 				num = -(long long) num;
 			}
+			else if (positiveFlag && num){
+				putch('+', putdat);
+				positiveFlag = false;
+			}
 			base = 10;
 			goto number;
 
@@ -210,12 +235,10 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 
 		// (unsigned) octal
 		case 'o':
-			// Replace this with your code.
-			putch('X', putdat);
-			putch('X', putdat);
-			putch('X', putdat);
-			break;
-
+			num = getuint(&ap, lflag);
+			putch('0', putdat);
+			base = 8;
+			goto number;
 		// pointer
 		case 'p':
 			putch('0', putdat);
@@ -254,7 +277,18 @@ vprintfmt(void (*putch)(int, void*), void *putdat, const char *fmt, va_list ap)
 				  const char *overflow_error = "\nwarning! The value %n argument pointed to has been overflowed!\n";
 
 				  // Your code here
-
+				  char* tmp;
+				  tmp = va_arg(ap, char *);
+				  if (tmp == NULL) {
+					  	printfmt(putch, putdat, "%s", null_error);
+				  }
+				  else if (*(unsigned int *) putdat > 254) {
+					  	printfmt(putch, putdat, "%s", overflow_error);
+						*tmp = -1;
+				  }
+				  else {
+					  *tmp = *(char*) putdat;
+				  }
 				  break;
 			  }
 
