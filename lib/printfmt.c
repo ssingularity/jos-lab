@@ -46,11 +46,6 @@ static void
 printnum(void (*putch)(int, void*), void *putdat,
 	 unsigned long long num, unsigned base, int width, int padc)
 {
-	// if cprintf'parameter includes pattern of the form "%-", padding
-	// space on the right side if neccesary.
-	// you can add helper function if needed.
-	// your code here:
-	
 	// first recursively print all preceding (more significant) digits
 	if (padc == '-'){
 		printnumHelp(putch, putdat, num, base, &width, padc);
