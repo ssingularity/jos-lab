@@ -65,7 +65,49 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+	//extern displays that the method is defined in the other place
+	//eg in the trapantry.S
+	//use it for simplifying the usage of SETGATE
+	extern void DIVIDE_HANDLER ();
+	extern void DEBUG_HANDLER  ();
+	extern void NMI_HANDLER    ();
+	extern void BRKPT_HANDLER  ();
+	extern void OFLOW_HANDLER  ();
+	extern void BOUND_HANDLER  ();
+	extern void ILLOP_HANDLER  ();
+	extern void DEVICE_HANDLER ();
+	extern void DBLFLT_HANDLER ();
+	extern void TSS_HANDLER    ();
+	extern void SEGNP_HANDLER  ();
+	extern void STACK_HANDLER  ();
+	extern void GPFLT_HANDLER  ();
+	extern void PGFLT_HANDLER  ();
+	extern void FPERR_HANDLER  ();
+	extern void ALIGN_HANDLER  ();
+	extern void MCHK_HANDLER   ();
+	extern void SIMDERR_HANDLER();
+	extern void SYSCALL_HANDLER();
 
+	SETGATE(idt[T_DIVIDE ] ,0 ,GD_KT,DIVIDE_HANDLER ,0);
+	SETGATE(idt[T_DEBUG  ] ,0 ,GD_KT,DEBUG_HANDLER  ,0);
+	SETGATE(idt[T_NMI    ] ,0 ,GD_KT,NMI_HANDLER    ,0);
+	SETGATE(idt[T_BRKPT  ] ,0 ,GD_KT,BRKPT_HANDLER  ,3);
+	SETGATE(idt[T_OFLOW  ] ,0 ,GD_KT,OFLOW_HANDLER  ,3);
+	SETGATE(idt[T_BOUND  ] ,0 ,GD_KT,BOUND_HANDLER  ,3);
+	SETGATE(idt[T_ILLOP  ] ,0 ,GD_KT,ILLOP_HANDLER  ,0);
+	SETGATE(idt[T_DEVICE ] ,0 ,GD_KT,DEVICE_HANDLER ,0);
+	SETGATE(idt[T_DBLFLT ] ,0 ,GD_KT,DBLFLT_HANDLER ,0);
+	SETGATE(idt[T_TSS    ] ,0 ,GD_KT,TSS_HANDLER    ,0);
+	SETGATE(idt[T_SEGNP  ] ,0 ,GD_KT,SEGNP_HANDLER  ,0);
+	SETGATE(idt[T_STACK  ] ,0 ,GD_KT,STACK_HANDLER  ,0);
+	SETGATE(idt[T_GPFLT  ] ,0 ,GD_KT,GPFLT_HANDLER  ,0);
+	SETGATE(idt[T_PGFLT  ] ,0 ,GD_KT,PGFLT_HANDLER  ,0);
+	SETGATE(idt[T_FPERR  ] ,0 ,GD_KT,FPERR_HANDLER  ,0);
+	SETGATE(idt[T_ALIGN  ] ,0 ,GD_KT,ALIGN_HANDLER  ,0);
+	SETGATE(idt[T_MCHK   ] ,0 ,GD_KT,MCHK_HANDLER   ,0);
+	SETGATE(idt[T_SIMDERR] ,0 ,GD_KT,SIMDERR_HANDLER  ,0);
+	SETGATE(idt[T_SYSCALL] ,0 ,GD_KT,SYSCALL_HANDLER,3);
+	
 	// Per-CPU setup 
 	trap_init_percpu();
 }
@@ -144,7 +186,27 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-
+	switch(tf->tf_trapno){
+		case T_DIVIDE:
+			break ;
+		case T_BRKPT:
+			monitor(tf);
+			return ;
+		case T_GPFLT:
+			break ;
+		case T_PGFLT:
+			page_fault_handler(tf);
+			break;
+		case T_SYSCALL:
+			tf->tf_regs.reg_eax = syscall(
+				tf->tf_regs.reg_eax, 
+				tf->tf_regs.reg_edx,
+				tf->tf_regs.reg_ecx,
+				tf->tf_regs.reg_ebx,
+				tf->tf_regs.reg_edi,
+				tf->tf_regs.reg_esi);
+			return ;
+	}
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)

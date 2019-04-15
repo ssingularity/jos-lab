@@ -54,6 +54,7 @@ struct Env {
 
 	// Address space
 	pde_t *env_pgdir;		// Kernel virtual address of page dir
+	uintptr_t env_ds_bottom;
 };
 
 #endif // !JOS_INC_ENV_H
