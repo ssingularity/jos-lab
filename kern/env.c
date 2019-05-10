@@ -121,6 +121,7 @@ env_init(void)
 	// LAB 3: Your code here.
 	for (int i=NENV-1; i>=0; --i){
 		envs[i].env_link = env_free_list;
+		envs[i].env_type = -1;
 		env_free_list = &envs[i];
 	}
 	// Per-CPU part of the initialization
@@ -531,7 +532,7 @@ env_run(struct Env *e)
 		cprintf("env pgdir %08x and id %08x\n",  e->env_pgdir, e->env_id);
 		lcr3(PADDR(e->env_pgdir));
 	}
-
+	unlock_kernel();
 	env_pop_tf(&e->env_tf);
 	// LAB 3: Your code here.
 }

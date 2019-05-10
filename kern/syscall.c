@@ -84,7 +84,12 @@ sys_exofork(void)
 	// will appear to return 0.
 
 	// LAB 4: Your code here.
-	panic("sys_exofork not implemented");
+	struct Env* env;
+	env_alloc(&env, curenv->env_id);
+	env->env_status = ENV_NOT_RUNNABLE;
+	env->env_tf = curenv->env_tf;
+	env->env_tf.tf_regs.reg_eax = 0;
+	return env->env_id;
 }
 
 // Set envid's env_status to status, which must be ENV_RUNNABLE
@@ -104,7 +109,10 @@ sys_env_set_status(envid_t envid, int status)
 	// envid's status.
 
 	// LAB 4: Your code here.
-	panic("sys_env_set_status not implemented");
+	struct Env* e;
+	envid2env(envid, &e, true);
+	e->env_status = status;
+	return 0;
 }
 
 // Set the page fault upcall for 'envid' by modifying the corresponding struct
@@ -149,7 +157,14 @@ sys_page_alloc(envid_t envid, void *va, int perm)
 	//   allocated!
 
 	// LAB 4: Your code here.
-	panic("sys_page_alloc not implemented");
+	struct Env* e;
+	envid2env(envid, &e, true);
+	struct PageInfo* p = page_alloc(ALLOC_ZERO);
+	if (page_insert(e->env_pgdir, p, va, perm) < 0) {
+		page_free(p);
+		return -1;
+	}
+	return 0;
 }
 
 // Map the page of memory at 'srcva' in srcenvid's address space
@@ -180,7 +195,14 @@ sys_page_map(envid_t srcenvid, void *srcva,
 	//   check the current permissions on the page.
 
 	// LAB 4: Your code here.
-	panic("sys_page_map not implemented");
+	struct Env* srce;
+	struct Env* dste;
+	pte_t* pte;
+	envid2env(srcenvid, &srce, true);
+	envid2env(dstenvid, &dste, true);
+	struct PageInfo* p = page_lookup(srce->env_pgdir, srcva, &pte);
+	page_insert(dste->env_pgdir, p, dstva, perm);
+	return 0;
 }
 
 // Unmap the page of memory at 'va' in the address space of 'envid'.
@@ -196,7 +218,11 @@ sys_page_unmap(envid_t envid, void *va)
 	// Hint: This function is a wrapper around page_remove().
 
 	// LAB 4: Your code here.
-	panic("sys_page_unmap not implemented");
+	struct Env* e;
+	envid2env(envid, &e, true);
+	page_remove(e->env_pgdir, va);
+	return 0;
+	
 }
 
 // Try to send 'value' to the target env 'envid'.
@@ -306,6 +332,19 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_map_kernel_page((void *) a1, (void *) a2);
 		case SYS_sbrk:
 			return sys_sbrk(a1);
+		case SYS_yield:
+			sys_yield();
+			return 0;
+		case SYS_exofork:
+			return sys_exofork();
+		case SYS_env_set_status:
+			return sys_env_set_status((envid_t) a1, (int) a2);
+		case SYS_page_alloc:
+			return sys_page_alloc((envid_t) a1, (void *) a2, (int) a3);
+		case SYS_page_map:
+			return sys_page_map((envid_t) a1, (void *) a2, (envid_t) a3, (void *) a4, (int) a5);
+		case SYS_page_unmap:
+			return sys_page_unmap((envid_t)a1, (void *)a2);
 		case NSYSCALLS:
 		default:
 			return -E_INVAL;
