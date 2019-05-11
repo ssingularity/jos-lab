@@ -280,14 +280,14 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if(PGOFF(srcva) || (perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & (~PTE_SYSCALL)))
 		return -E_INVAL;
 		pte_t *pte;
-		struct Page *pg;
+		struct PageInfo *pg;
 		if(!(pg = page_lookup(curenv->env_pgdir, srcva, &pte)))
-		return -E_INVAL;
+			return -E_INVAL;
 		if((*pte & perm) != perm)
-		return -E_INVAL;
+			return -E_INVAL;
 		if(e->env_ipc_dstva < (void *)UTOP){
-		if((r = page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm)) < 0)
-			return r;
+			if((r = page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm)) < 0)
+				return r;
 		}
 	}
 	e->env_ipc_recving = false;
@@ -314,7 +314,7 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	if (dstva < UTOP && PGOFF(dstva)) {
+	if (dstva < (void*)UTOP && PGOFF(dstva)) {
 		return -E_INVAL;
 	}
 	else {
