@@ -110,7 +110,7 @@ sys_env_set_status(envid_t envid, int status)
 
 	// LAB 4: Your code here.
 	struct Env* e;
-	if (envid2env(envid, &e, true);
+	envid2env(envid, &e, true);
 	e->env_status = status;
 	return 0;
 }
@@ -128,7 +128,7 @@ sys_env_set_pgfault_upcall(envid_t envid, void *func)
 {
 	// LAB 4: Your code here.
 	struct Env* e;
-	envid2env(envid, e, true);
+	envid2env(envid, &e, true);
 	e->env_pgfault_upcall = func;
 	return 0;
 }
