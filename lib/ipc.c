@@ -27,15 +27,11 @@ ipc_recv(envid_t *from_env_store, void *pg, int *perm_store)
 	int32_t r = sys_ipc_recv(pg);
 	if(r >= 0) {
 		if(perm_store)
-		*perm_store = thisenv->env_ipc_perm;
+			*perm_store = thisenv->env_ipc_perm;
 		if(from_env_store)
-		*from_env_store = thisenv->env_ipc_from;
+			*from_env_store = thisenv->env_ipc_from;
 		return thisenv->env_ipc_value;
 	}
-	if(perm_store)
-		*perm_store = 0;
-	if(from_env_store)
-		*from_env_store = 0;
 	return r;
 }
 

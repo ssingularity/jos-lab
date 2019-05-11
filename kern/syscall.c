@@ -272,23 +272,13 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	// LAB 4: Your code here.
 	struct Env *e;
 	int r;
-	if((r = envid2env(envid, &e, 0) ) < 0)
-		return r;
+	envid2env(envid, &e, 0);
 	if(!e->env_ipc_recving)
 		return -E_IPC_NOT_RECV;
-	if(srcva < (void*)UTOP){
-		if(PGOFF(srcva) || (perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & (~PTE_SYSCALL)))
-		return -E_INVAL;
+	if(srcva < (void*)UTOP &&e->env_ipc_dstva < (void *)UTOP){
 		pte_t *pte;
-		struct PageInfo *pg;
-		if(!(pg = page_lookup(curenv->env_pgdir, srcva, &pte)))
-			return -E_INVAL;
-		if((*pte & perm) != perm)
-			return -E_INVAL;
-		if(e->env_ipc_dstva < (void *)UTOP){
-			if((r = page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm)) < 0)
-				return r;
-		}
+		struct PageInfo *pg= page_lookup(curenv->env_pgdir, srcva, &pte);
+		page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm);
 	}
 	e->env_ipc_recving = false;
 	e->env_ipc_from = sys_getenvid();
@@ -314,16 +304,11 @@ static int
 sys_ipc_recv(void *dstva)
 {
 	// LAB 4: Your code here.
-	if (dstva < (void*)UTOP && PGOFF(dstva)) {
-		return -E_INVAL;
-	}
-	else {
-		curenv->env_ipc_recving = true;
-		curenv->env_ipc_dstva = dstva;
-		curenv->env_status = ENV_NOT_RUNNABLE;
-		sched_yield();
-		return 0;
-	}
+	curenv->env_ipc_recving = true;
+	curenv->env_ipc_dstva = dstva;
+	curenv->env_status = ENV_NOT_RUNNABLE;
+	sched_yield();
+	return 0;
 }
 
 static int

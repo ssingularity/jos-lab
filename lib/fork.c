@@ -103,7 +103,7 @@ fork(void)
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
 	if (envid < 0) {
-		return -1;
+		panic("sys_exofork: %e", envid);
 	}
 	if (envid == 0) {
 		// We're the child.
