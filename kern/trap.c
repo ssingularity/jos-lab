@@ -374,16 +374,16 @@ page_fault_handler(struct Trapframe *tf)
 	if (curenv->env_pgfault_upcall != NULL){
 		struct UTrapframe* trapframe;
 		// in the uxstack
-		if (UXSTACKTOP > tf->tf_esp && tf->tf_esp >= UXSTACKTOP - PGSIZE)		
+		if (UXSTACKTOP >= tf->tf_esp && tf->tf_esp >= UXSTACKTOP - PGSIZE)		
 			trapframe = (struct UTrapframe * ) (tf->tf_esp - sizeof(void *) - sizeof(struct UTrapframe));
 		else 
 			trapframe = (struct UTrapframe * ) (UXSTACKTOP - sizeof(struct UTrapframe));
-
+		user_mem_assert(curenv, (void*)trapframe, sizeof(struct UTrapframe), PTE_W);
+		trapframe->utf_eflags   = tf->tf_eflags;
 		trapframe->utf_fault_va = fault_va;
 		trapframe->utf_err      = tf->tf_err;
 		trapframe->utf_regs     = tf->tf_regs;
 		trapframe->utf_eip      = tf->tf_eip;
-		trapframe->utf_eflags   = tf->tf_eflags;
 		trapframe->utf_esp      = tf->tf_esp;
 
 		curenv->env_tf.tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
