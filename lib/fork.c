@@ -18,13 +18,10 @@ extern void _pgfault_upcall(void);
 static void
 pgfault(struct UTrapframe *utf)
 {
-	//void *addr = (void *) utf->utf_fault_va;
-	//注意！addr有可能不是页对齐的
-	void *addr = (void *) ROUNDDOWN(utf->utf_fault_va, PGSIZE);
+	void *addr = (void *) utf->utf_fault_va;
 	uint32_t err = utf->utf_err;
 	int r;
 
-	pte_t pte = uvpt[(uintptr_t)addr/PGSIZE];
 	// Check that the faulting access was (1) a write, and (2) to a
 	// copy-on-write page.  If not, panic.
 	// Hint:
@@ -40,17 +37,14 @@ pgfault(struct UTrapframe *utf)
 	//   You should make three system calls.
 
 	// LAB 4: Your code here.
-
-	//不管是parent还是child都不会复用实际的这个物理页，当最终引用计数降为０时，这个页自然会被销毁
-
-	if((FEC_WR & err) && (pte & PTE_COW)){
+	addr = ROUNDDOWN(addr, PGSIZE);
+	if((FEC_WR & err) && (uvpt[(uintptr_t)addr / PGSIZE] & PTE_COW)){
 		sys_page_alloc(0, PFTEMP, PTE_P|PTE_U|PTE_W);
 		memmove(PFTEMP, addr, PGSIZE);
 		sys_page_map(0, PFTEMP, 0, addr, PTE_P|PTE_U|PTE_W);
-		//unmap操作其实可以省略，下次用到的时候自然会unmap
 		sys_page_unmap(0, PFTEMP);
 	}else{
-		panic("page fault at %x !", (uintptr_t)addr);
+		panic("page fault on not cow");
 	}
 }
 
@@ -68,34 +62,22 @@ pgfault(struct UTrapframe *utf)
 static int
 duppage(envid_t envid, unsigned pn)
 {
-	int r = 0;
+	int r;
 	void* addr = (void*)(pn * PGSIZE);
 	if(pn == (UXSTACKTOP/PGSIZE - 1)){
-		if((r = sys_page_alloc(envid, (void*)(UXSTACKTOP - PGSIZE), PTE_P|PTE_W|PTE_U)) < 0)
-			panic("sys_page_alloc: %e", r);
-	}else{
-		pte_t pte = uvpt[pn];
-		if((pte & PTE_P) == 0 || (pte & PTE_U) == 0){
-			return 0;
-		}
-		else if((pte & PTE_W) || (pte & PTE_COW)){
-			/*
-			注意，此刻的顺序不可颠倒：因为现在parent正在修改栈，如果先把栈的地方设置成COW，
-			那么会立刻因为write而触发page fault,从而将栈设置为write。之后child照常设置成COW，
-			但此时parent的改变已经反映在了child的栈上
-			*/
-			if((r = sys_page_map(0, addr, envid, addr, PTE_U|PTE_P|PTE_COW)) < 0){
-				panic("sys_page_map: %e", r);
-			}
-			if((r = sys_page_map(0, addr, 0, addr, PTE_U|PTE_P|PTE_COW)) < 0){
-				panic("sys_page_map: %e", r);
-			}
-		}else{
-			if((r = sys_page_map(0, addr, envid, addr, PTE_U|PTE_P)) < 0)
-				panic("sys_page_map: %e, pn:%d", r, pn);
-		}
+		sys_page_alloc(envid, (void*)(UXSTACKTOP - PGSIZE), PTE_P|PTE_W|PTE_U);
 	}
-	return r;
+	else if((uvpt[pn] & PTE_P) == 0 || (uvpt[pn] & PTE_U) == 0){
+		return 0;
+	}
+	else if (uvpt[pn] & (PTE_W | PTE_COW)){
+		sys_page_map(0, addr, envid, addr, PTE_U|PTE_P|PTE_COW);
+		sys_page_map(0, addr, 0, addr, PTE_U|PTE_P|PTE_COW);
+	}
+	else {
+		sys_page_map(0, addr, envid, addr, PTE_U|PTE_P);
+	}
+	return 0;
 }
 
 //
@@ -120,8 +102,6 @@ fork(void)
 	// LAB 4: Your code here.
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
-	if (envid < 0)
-		panic("sys_exofork: %e", envid);
 	if (envid == 0) {
 		// We're the child.
 		// The copied value of the global variable 'thisenv'
@@ -131,8 +111,7 @@ fork(void)
 		return 0;
 	}
 	for(int i = 0; i<UTOP/PGSIZE; i++){
-		pde_t pde = uvpd[i/NPTENTRIES];
-		if(pde & PTE_P){
+		if(uvpd[i/NPTENTRIES] & PTE_P){
 			duppage(envid, i);
 		}
 	}
