@@ -38,16 +38,14 @@ pgfault(struct UTrapframe *utf)
 
 	// LAB 4: Your code here.
 	addr = ROUNDDOWN(addr, PGSIZE);
-		if((FEC_WR & err) && (uvpt[(uintptr_t)addr / PGSIZE] & PTE_COW)){
+	if((FEC_WR & err) && (uvpt[(uintptr_t)addr / PGSIZE] & PTE_COW)){
 		sys_page_alloc(0, PFTEMP, PTE_P|PTE_U|PTE_W);
 		memmove(PFTEMP, addr, PGSIZE);
 		sys_page_map(0, PFTEMP, 0, addr, PTE_P|PTE_U|PTE_W);
 		sys_page_unmap(0, PFTEMP);
 	}else{
-		panic("page fault at %x !", (uintptr_t)addr);
+		panic("page fault on not cow");
 	}
-
-	panic("pgfault not implemented");
 }
 
 //
