@@ -16,7 +16,7 @@
 #include <kern/spinlock.h>
 
 struct Env *envs = NULL;		// All environments
-static struct Env *env_free_list;	// Free environment list
+static struct Env *env_free_list = NULL;	// Free environment list
 					// (linked by Env->env_link)
 
 #define ENVGENSHIFT	12		// >= LOGNENV
@@ -391,7 +391,10 @@ env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
 	struct Env* e;
-	env_alloc(&e, 0);
+	if (env_alloc(&e, 0) < 0){
+		panic("env_create: %e", -1);
+		return;
+	}
 	e->env_type = type;
 	cprintf("env_create before load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
 	load_icode(e, binary);
