@@ -102,6 +102,9 @@ fork(void)
 	// LAB 4: Your code here.
 	set_pgfault_handler(pgfault);
 	envid_t envid = sys_exofork();
+	if (envid < 0) {
+		panic("sys_exofork");
+	}
 	if (envid == 0) {
 		// We're the child.
 		// The copied value of the global variable 'thisenv'
