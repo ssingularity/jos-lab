@@ -393,15 +393,20 @@ env_create(uint8_t *binary, enum EnvType type)
 
 	// If this is the file server (type == ENV_TYPE_FS) give it I/O privileges.
 	// LAB 5: Your code here.
-	struct Env* e;
-	if (env_alloc(&e, 0) < 0){
-		panic("env_create: %e", -1);
+
+	struct Env* new_env;
+	// Returns 0 on success, < 0 on failure.  Errors include:
+	//	-E_NO_FREE_ENV if all NENV environments are allocated
+	//	-E_NO_MEM on memory exhaustion
+	int alloc_result = env_alloc(&new_env, 0);
+	if(alloc_result < 0){
+		panic("env_create: %e", alloc_result);
 		return;
+	}else{
+		if (type == ENV_TYPE_FS) new_env->env_tf.tf_eflags |= FL_IOPL_MASK;
+		load_icode(new_env, binary);
+		new_env->env_type = type;
 	}
-	e->env_type = type;
-	cprintf("env_create before load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
-	load_icode(e, binary);
-	cprintf("env_create after load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
 }
 
 //

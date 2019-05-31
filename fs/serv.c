@@ -329,6 +329,7 @@ serve(void)
 void
 umain(int argc, char **argv)
 {
+	cprintf("here\n");
 	static_assert(sizeof(struct File) == 256);
 	binaryname = "fs";
 	cprintf("FS is running\n");
