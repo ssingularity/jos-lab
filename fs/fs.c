@@ -142,21 +142,24 @@ static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
        // LAB 5: Your code here.
-	   if (filebno < NDIRECT){
-		   *ppdiskbno = &(f->f_direct[filebno]);
-	   }
-	   else {
-		   if (!f->f_indirect){
-			   if (!alloc) return -E_NOT_FOUND;
-			   int blockNo = alloc_block();
-			   memset(diskaddr(blockNo), 0, BLKSIZE);
-			   f->f_indirect=blockNo;
-			   flush_block(diskaddr(blockNo));
-		   }
-		   uint32_t * addr = (uint32_t *)diskaddr(f->f_indirect);
-		   *ppdiskbno = addr + (filebno - NDIRECT);
-	   }
-	   return 0;
+		if(filebno >= NDIRECT + NINDIRECT)
+			return -E_INVAL;
+		else if (filebno < NDIRECT){
+			*ppdiskbno = &(f->f_direct[filebno]);
+		}
+		else {
+			if (!f->f_indirect){
+				if (!alloc) return -E_NOT_FOUND;
+				int blockNo = alloc_block();
+				if (blockNo < 0) return blockNo;
+				memset(diskaddr(blockNo), 0, BLKSIZE);
+				f->f_indirect=blockNo;
+				flush_block(diskaddr(blockNo));
+			}
+			uint32_t * addr = (uint32_t *)diskaddr(f->f_indirect);
+			*ppdiskbno = addr + (filebno - NDIRECT);
+		}
+		return 0;
 }
 
 // Set *blk to the address in memory where the filebno'th
@@ -172,9 +175,10 @@ file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
 	// LAB 5: Your code here.
 	uint32_t * blockNoPtr;
-	file_block_walk(f, filebno, &blockNoPtr, true);
+	if (file_block_walk(f, filebno, &blockNoPtr, true) < 0) return -1;
 	if(!(*blockNoPtr)) {
 		*blockNoPtr = alloc_block();
+		if (*blockNoPtr < 0) return -E_NO_DISK;
 	}
 	*blk = diskaddr(*blockNoPtr);
 	return 0;
