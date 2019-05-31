@@ -147,7 +147,7 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 		   *ppdiskbno = &(f->f_direct[filebno]);
 	   }
 	   else {
-		   if (f->f_indirect == NULL){
+		   if (!f->f_indirect){
 			   if (!alloc) return -E_NOT_FOUND;
 			   int blockNo = alloc_block();
 			   memset(diskaddr(blockNo), 0, BLKSIZE);
