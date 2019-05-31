@@ -288,18 +288,9 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 	if(!e->env_ipc_recving)
 		return -E_IPC_NOT_RECV;
 	if(srcva < (void*)UTOP &&e->env_ipc_dstva < (void *)UTOP){
-		if(PGOFF(srcva) || (perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & (~PTE_SYSCALL)))
-			return -E_INVAL;
 		pte_t *pte;
-		struct PageInfo *pg;
-		if(!(pg = page_lookup(curenv->env_pgdir, srcva, &pte)))
-			return -E_INVAL;
-		if((perm & PTE_W) && !(*pte & PTE_W))
-			return -E_INVAL;
-		if(e->env_ipc_dstva < (void *)UTOP){
-		if((r = page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm)) < 0)
-			return r;
-		}
+		struct PageInfo *pg= page_lookup(curenv->env_pgdir, srcva, &pte);
+		page_insert(e->env_pgdir, pg, e->env_ipc_dstva, perm);
 	}
 	e->env_ipc_recving = false;
 	e->env_ipc_from = sys_getenvid();
