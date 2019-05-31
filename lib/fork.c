@@ -70,6 +70,9 @@ duppage(envid_t envid, unsigned pn)
 	else if((uvpt[pn] & PTE_P) == 0 || (uvpt[pn] & PTE_U) == 0){
 		return 0;
 	}
+	else if (uvpt[pn] & PTE_SHARE){
+		sys_page_map(0, addr, envid, addr, uvpt[pn] & PTE_SYSCALL);
+	}
 	else if (uvpt[pn] & (PTE_W | PTE_COW)){
 		sys_page_map(0, addr, envid, addr, PTE_U|PTE_P|PTE_COW);
 		sys_page_map(0, addr, 0, addr, PTE_U|PTE_P|PTE_COW);
