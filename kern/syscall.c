@@ -393,7 +393,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 		case SYS_ipc_try_send:
 			return sys_ipc_try_send((envid_t) a1, (uint32_t) a2, (void *) a3, (unsigned int) a4);
 		case SYS_env_set_trapframe:
-			return sys_env_set_trapframe((envid_t) a1, (struct Trapeframe *) a2);
+			return sys_env_set_trapframe((envid_t) a1, (struct Trapframe *) a2);
 		case NSYSCALLS:
 		default:
 			return -E_INVAL;
