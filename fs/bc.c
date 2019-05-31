@@ -49,7 +49,7 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 	addr = ROUNDDOWN(addr, PGSIZE);
-	sys_page_alloc(sys_getenvid(), addr, PTE_P | PTE_U | PTE_W);
+	sys_page_alloc(0, addr, PTE_P | PTE_U | PTE_W);
 	ide_read(blockno * BLKSECTS, addr, BLKSECTS);
 
 
