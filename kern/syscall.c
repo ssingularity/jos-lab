@@ -291,7 +291,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if(PGOFF(srcva) || (perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & (~PTE_SYSCALL)))
 			return -E_INVAL;
 		pte_t *pte;
-		struct Page *pg;
+		struct PageInfo *pg;
 		if(!(pg = page_lookup(curenv->env_pgdir, srcva, &pte)))
 			return -E_INVAL;
 		if((perm & PTE_W) && !(*pte & PTE_W))
