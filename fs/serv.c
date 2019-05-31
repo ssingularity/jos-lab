@@ -215,7 +215,7 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	// Lab 5: Your code here:
 	struct OpenFile* openFile;
 	if (openfile_lookup(envid, req->req_fileid, &openFile) < 0) return -1;
-	int count = file_read(openFile->o_file, ret->ret_buf, MIN(req->req_n, sizeof(ret->ret_buf)), openFile->o_fd->fd_offset);
+	int count = file_read(openFile->o_file, ret->ret_buf, MIN(req->req_n, PGSIZE), openFile->o_fd->fd_offset);
 	if (count < 0) return count;
 	openFile->o_fd->fd_offset += count;
 	return count;
