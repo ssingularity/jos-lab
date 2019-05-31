@@ -220,8 +220,9 @@ serve_read(envid_t envid, union Fsipc *ipc)
 	// int count = file_read(openFile->o_file, ret->ret_buf, MIN(req->req_n, PGSIZE), openFile->o_fd->fd_offset);
 	// if (count < 0) return count;
 	// openFile->o_fd->fd_offset += count;
-	// return count;	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
-	return r;
+	// return count;	
+	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+		return r;
 	if((r = file_read(o->o_file, ret->ret_buf, MIN(PGSIZE, req->req_n), o->o_fd->fd_offset)) < 0)
 		return r;
 	o->o_fd->fd_offset += r;
