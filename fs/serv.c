@@ -209,24 +209,23 @@ serve_read(envid_t envid, union Fsipc *ipc)
 {
 	struct Fsreq_read *req = &ipc->read;
 	struct Fsret_read *ret = &ipc->readRet;
-	struct OpenFile *o;
 	int r;
 
 	if (debug)
 		cprintf("serve_read %08x %08x %08x\n", envid, req->req_fileid, req->req_n);
 	// Lab 5: Your code here:
-	// struct OpenFile* openFile;
-	// if (openfile_lookup(envid, req->req_fileid, &openFile) < 0) return -1;
-	// int count = file_read(openFile->o_file, ret->ret_buf, MIN(req->req_n, PGSIZE), openFile->o_fd->fd_offset);
-	// if (count < 0) return count;
-	// openFile->o_fd->fd_offset += count;
-	// return count;	
-	if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
-		return r;
-	if((r = file_read(o->o_file, ret->ret_buf, MIN(PGSIZE, req->req_n), o->o_fd->fd_offset)) < 0)
-		return r;
-	o->o_fd->fd_offset += r;
-	return r;
+	struct OpenFile* openFile;
+	if ((r = openfile_lookup(envid, req->req_fileid, &openFile)) < 0) return r;
+	int count = file_read(openFile->o_file, ret->ret_buf, MIN(req->req_n, PGSIZE), openFile->o_fd->fd_offset);
+	if (count < 0) return count;
+	openFile->o_fd->fd_offset += count;
+	return count;	
+	// if ((r = openfile_lookup(envid, req->req_fileid, &o)) < 0)
+	// 	return r;
+	// if((r = file_read(o->o_file, ret->ret_buf, MIN(PGSIZE, req->req_n), o->o_fd->fd_offset)) < 0)
+	// 	return r;
+	// o->o_fd->fd_offset += r;
+	// return r;
 }
 
 
