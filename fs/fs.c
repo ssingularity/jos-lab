@@ -142,7 +142,6 @@ static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
        // LAB 5: Your code here.
-       panic("file_block_walk not implemented");
 	   if (filebno < NDIRECT){
 		   *ppdiskbno = &(f->f_direct[filebno]);
 	   }
