@@ -306,7 +306,7 @@ copy_shared_pages(envid_t child)
 		if (uvpd[PDX(address)] & PTE_P){
 			pte_t pte = uvpt[PGNUM(address)];
 			if((pte & PTE_SHARE) && (pte & PTE_P) && (pte & PTE_U)){
-				sys_page_map(0, address, child, address, pte&PTE_SYSCALL);
+				sys_page_map(0, (void*)address, child, (void*)address, pte&PTE_SYSCALL);
 			}
 		}
 	}
