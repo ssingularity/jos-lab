@@ -161,6 +161,8 @@ typedef uint32_t pde_t;
  * will always be available at virtual address (UVPT + (UVPT >> PGSHIFT)), to
  * which uvpd is set in lib/entry.S.
  */
+//在UVPT中相当于把当前页目录包含的所有的页表都放了进去（一共4MB = 1024 * 4KB（页表大小））
+//所以可以通过uvpt[pgnum(va)]来得到对应的pte,通过uvpd[pgnum(va) / 1024]来得到pde
 extern volatile pte_t uvpt[];     // VA of "virtual page table"
 extern volatile pde_t uvpd[];     // VA of current page directory
 #endif
