@@ -218,6 +218,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+	// 映射所有的pages所用到的pagetable不会超过2M，所以一开始的手工映射到目前是足够用的，但是等map完了就可以用新的kern_pgdir了
 	boot_map_region_large(kern_pgdir, KERNBASE, -KERNBASE, 0, PTE_W);
 
 	// Check that the initial page directory has been set up correctly.
