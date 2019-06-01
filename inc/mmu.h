@@ -57,6 +57,7 @@
 // Page table/directory entry flags.
 #define PTE_P		0x001	// Present
 #define PTE_W		0x002	// Writeable
+// 有了PTE_U用户才能进行读，否则就不行,这样权限检查就保证了用户不能读写内核的地址空间
 #define PTE_U		0x004	// User
 #define PTE_PWT		0x008	// Write-Through
 #define PTE_PCD		0x010	// Cache-Disable

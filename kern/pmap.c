@@ -84,6 +84,7 @@ static void check_page_installed_pgdir(void);
 // If we're out of memory, boot_alloc should panic.
 // This function may ONLY be used during initialization,
 // before the page_free_list list has been set up.
+// 其实并没有做什么分配，因为nextfree往上的地址肯定是空的，只要简单的返回对应的虚拟地址值，也就是程序中的指针,并对nextfree执行相应操作即可
 static void *
 boot_alloc(uint32_t n)
 {
@@ -215,6 +216,7 @@ mem_init(void)
 	//
 	// If the machine reboots at this point, you've probably set up your
 	// kern_pgdir wrong.
+	//本来是用的手动定义的仅仅映射了4MB的pagetable（用来支持之前的代码的地址映射），现在通过代码pagetable映射了256MB，可以用新的pgdir了
 	lcr3(PADDR(kern_pgdir));
 
 	check_page_free_list(0);
@@ -364,6 +366,8 @@ page_decref(struct PageInfo* pp)
 // Hint 3: look at inc/mmu.h for useful macros that manipulate page
 // table and page directory entries.
 //
+// 因为用户空间和内核空间一样大，所以所有的物理页都可以通过KADDR得到它在内核中的虚拟地址！！！！(内核空间足够寻址这些物理地址)
+// 也就是说一个物理地址一般有两个虚拟地址同它映射，一个在用户空间，一个在内核空间！！！但是用户无法访问内核空间的虚拟地址！！！
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
@@ -376,6 +380,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 		struct PageInfo * page = page_alloc(ALLOC_ZERO);
 		if (page == NULL) return NULL;
 		page -> pp_ref++;
+		// page2pa可以映射所有的page而不仅仅是在jos 256MB下的物理内存
 		*pde_ptr = page2pa(page) | PTE_P | PTE_U | PTE_W;
 	}
 	if (!((*pde_ptr) & PTE_P)) return NULL;
@@ -395,6 +400,7 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 // mapped pages.
 //
 // Hint: the TA solution uses pgdir_walk
+// 这儿可以用来映射用户空间的VA和PA，只能在内核态运行
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
@@ -424,7 +430,7 @@ boot_map_region_large(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, in
 		int pde_index = PDX(va + i);
 		pde_t * pde_ptr = & pgdir[pde_index];
 		if ((*pde_ptr & (PTE_P | PTE_PS)) != (PTE_P | PTE_PS)){
-			*pde_ptr = (pa + i) | perm | PTE_P | PTE_PS;
+			*pde_ptr = (pa + i) | perm | PTE_P 
 		}
 	}
 }
@@ -454,6 +460,7 @@ boot_map_region_large(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, in
 // Hint: The TA solution is implemented using pgdir_walk, page_remove,
 // and page2pa.
 //
+// pp其实就已经相当于一个实际的内存页了，相当于VA和PA的映射, 和boot_map_region差不多，无非是把pa换成了pageinfo罢了
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
@@ -518,6 +525,7 @@ page_remove(pde_t *pgdir, void *va)
 	else {
 		page_decref(page);
 		tlb_invalidate(pgdir, va);
+		// clear the mapping
 		*pte = 0;
 	}
 }

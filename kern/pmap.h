@@ -22,6 +22,10 @@ extern pde_t *kern_pgdir;
  * and returns the corresponding physical address.  It panics if you pass it a
  * non-kernel virtual address.
  */
+// 对于在内核中的代码可以直接通过PADDR和VADDR也即加减一个常数来对于VA和PA进行转换，因为它们是固定映射
+// 但是对于用户的代码必须通过PageManagement来进行管理，并通过MMU来进行解析
+// 内核态的一个好处就是VA和PA可以非常方便得互相转换，从而可以很简单地分配页
+// 代码只能通过虚拟地址来写入实际内存，所以虚拟地址非常重要
 #define PADDR(kva) _paddr(__FILE__, __LINE__, kva)
 
 static inline physaddr_t

@@ -68,6 +68,8 @@ entry:
 	# Now paging is enabled, but we're still running at a low EIP
 	# (why is this okay?).  Jump up above KERNBASE before entering
 	# C code.
+	# eip is used to store the istruction
+	# at a low EIP is okay because we map both high and low virtual memory to the physical memoty
 	mov	$relocated, %eax
 	jmp	*%eax
 relocated:
