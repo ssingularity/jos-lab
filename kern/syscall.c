@@ -77,9 +77,9 @@ static int
 sys_sbrk(uint32_t inc)
 {
     // LAB3: your code here.
-	region_alloc(curenv, (void *)(curenv->env_ds_bottom - inc), inc);
-	curenv->env_ds_bottom = (uintptr_t) ROUNDDOWN(curenv->env_ds_bottom - inc, PGSIZE);
-	return curenv->env_ds_bottom;
+	region_alloc(curenv, (uintptr_t *)curenv->env_break, inc);
+	curenv->env_break += ROUNDUP(inc, PGSIZE);
+	return curenv->env_break;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.

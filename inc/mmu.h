@@ -275,7 +275,7 @@ struct Gatedesc {
     //   instruction restores IF to the value in the EFLAGS image on the
     //   stack. An interrupt through a trap gate does not change IF."
 // - sel: Code segment selector for interrupt/trap handler
-// - off: Offset in code segment for interrupt/trap handler
+// - off: Offset in code segment for interrupt/trap handler(也即虚拟地址)
 // - dpl: Descriptor Privilege Level -
 //	  the privilege level required for software to invoke
 //	  this interrupt/trap gate explicitly using an int instruction.

@@ -256,6 +256,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 	e->env_tf.tf_cs = GD_UT | 3;
 	// You will set e->env_tf.tf_eip later.
 
+	e->env_break = UTEXT;
 	// commit the allocation
 	env_free_list = e->env_link;
 	*newenv_store = e;
@@ -284,7 +285,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 	uintptr_t start = (uintptr_t) ROUNDDOWN(va, PGSIZE);
 	uintptr_t end = (uintptr_t) ROUNDUP(va + len, PGSIZE);
 	for (uintptr_t i = start; i < end; i += PGSIZE){
-		struct PageInfo* pg = page_alloc(0);
+		struct PageInfo* pg = page_alloc(ALLOC_ZERO);
 		page_insert(e->env_pgdir, pg, (void *)i, PTE_W | PTE_U);
 	}
 }
@@ -343,32 +344,39 @@ load_icode(struct Env *e, uint8_t *binary)
 	//  What?  (See env_run() and env_pop_tf() below.)
 
 	// LAB 3: Your code here.
-	struct Elf * ELFHDR = (struct Elf *) binary;
-	struct Proghdr *ph, *eph;
-
-	// is this a valid ELF?
-	if (ELFHDR->e_magic != ELF_MAGIC)
-		panic("load_icode fail");
-
-	// load each program segment (ignores ph flags)
-	ph = (struct Proghdr *) ((uint8_t *) ELFHDR + ELFHDR->e_phoff);
-	eph = ph + ELFHDR->e_phnum;
-	lcr3(PADDR(e->env_pgdir));
-	for (; ph < eph; ++ph){
-		if (ph->p_type == ELF_PROG_LOAD){
-			region_alloc(e, (void *)ph->p_va, ph->p_memsz);
-			memset((void *)ph->p_va, 0, ph->p_memsz);
-			memmove((void *)ph->p_va, binary + ph->p_offset, ph->p_filesz);
+	struct Elf* elf = (struct Elf*)binary;
+	struct Proghdr* program_header = (struct Proghdr*)(binary + elf->e_phoff);
+	uint16_t program_num = elf->e_phnum;
+	uint32_t max_va = UTEXT;
+	for(int index = 0;index < program_num; index++){
+		struct Proghdr* program = program_header + index;
+		if(program->p_type == ELF_PROG_LOAD){
+			uint32_t va_start = ROUNDDOWN(program->p_va, PGSIZE);
+			uint32_t va_offset = program->p_va - va_start;
+			uint32_t va_end = ROUNDUP(program->p_va + program->p_memsz, PGSIZE);
+			max_va = MAX(max_va, va_end);
+			for(int pg_index = 0;pg_index < (va_end - va_start)/PGSIZE; pg_index++){
+				struct PageInfo* page = page_alloc(ALLOC_ZERO);
+				//If the program is too small
+				if((pg_index+1) * PGSIZE - va_offset >= program->p_filesz && pg_index == 0){
+					memcpy(page2kva(page) + va_offset, binary + program->p_offset, program->p_filesz);
+				}else if(pg_index == 0){
+					memcpy(page2kva(page) + va_offset, binary + program->p_offset, PGSIZE - va_offset);
+				}else if(((pg_index+1) * PGSIZE - va_offset >= program->p_filesz) && (pg_index * PGSIZE - va_offset < program->p_filesz)){
+					memcpy(page2kva(page), binary + program->p_offset + pg_index*PGSIZE - va_offset, program->p_filesz - pg_index*PGSIZE + va_offset);
+				}else if((pg_index+1) * PGSIZE - va_offset < program->p_filesz){
+					memcpy(page2kva(page), binary + program->p_offset + pg_index*PGSIZE - va_offset, PGSIZE);
+				}
+				page_insert(e->env_pgdir, page, (void*)va_start + pg_index*PGSIZE, PTE_U | PTE_W);
+			} 
 		}
 	}
-	lcr3(PADDR(kern_pgdir));
+	e->env_break = max_va;
 	// Now map one page for the program's initial stack
 	// at virtual address USTACKTOP - PGSIZE.
-
-	// LAB 3: Your code here.
-	e->env_tf.tf_eip = ELFHDR->e_entry;
-	region_alloc(e, (void *) (USTACKTOP - PGSIZE), PGSIZE);
-	e->env_ds_bottom = ROUNDDOWN((USTACKTOP - PGSIZE), PGSIZE);
+	struct PageInfo* stack_page = page_alloc(ALLOC_ZERO);
+	page_insert(e->env_pgdir, stack_page, (void*)USTACKTOP - PGSIZE, PTE_U | PTE_W);
+	e->env_tf.tf_eip = elf->e_entry;
 }
 
 //
@@ -485,6 +493,7 @@ env_pop_tf(struct Trapframe *tf)
 //
 // This function does not return.
 //
+// 会从trapframe中恢复esp等信息
 void
 env_run(struct Env *e)
 {

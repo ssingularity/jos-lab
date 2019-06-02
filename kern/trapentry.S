@@ -20,6 +20,7 @@
  *   void NAME();
  * where NAME is the argument passed to TRAPHANDLER.
  */
+ // 换栈、PUSH trapframe下半部分的动作CPU硬件已经完成好了，我们现在是为了完成trapframe的上半部分
 #define TRAPHANDLER(name, num)						\
 	.globl name;		/* define global symbol for 'name' */	\
 	.type name, @function;	/* symbol type is function */		\
@@ -82,5 +83,6 @@ _alltraps:
 	popw  %ds
 	pushw $GD_KD
 	popw  %es
+	//esp 作为参数被压到栈上，也即指向trapframe的指针，这个时候，栈被当成虚拟内存来访问
 	pushl %esp
 	call trap

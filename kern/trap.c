@@ -217,6 +217,7 @@ trap_dispatch(struct Trapframe *tf)
 	}
 }
 
+//trap 通过cpu硬件中断机制，强行使自己陷入内核态，否则就没有别的方法进入内核态了
 void
 trap(struct Trapframe *tf)
 {
@@ -227,12 +228,14 @@ trap(struct Trapframe *tf)
 	// Check that interrupts are disabled.  If this assertion
 	// fails, DO NOT be tempted to fix it by inserting a "cli" in
 	// the interrupt path.
+	// 确保不允许中断
 	assert(!(read_eflags() & FL_IF));
 
 	cprintf("Incoming TRAP frame at %p\n", tf);
 
 	if ((tf->tf_cs & 3) == 3) {
 		// Trapped from user mode.
+		// 内和态和用户态都是在同一个进程中进行的
 		assert(curenv);
 
 		// Copy trap frame (which is currently on the stack)
