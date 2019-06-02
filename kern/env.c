@@ -15,6 +15,7 @@
 #include <kern/cpu.h>
 #include <kern/spinlock.h>
 
+//在mem_init中初始化并映射了
 struct Env *envs = NULL;		// All environments
 static struct Env *env_free_list = NULL;	// Free environment list
 					// (linked by Env->env_link)
@@ -119,11 +120,15 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-	for (int i=NENV-1; i>=0; --i){
-		envs[i].env_link = env_free_list;
-		envs[i].env_type = -1;
-		env_free_list = &envs[i];
+	env_free_list = envs;
+	for(int index = 0; index < NENV - 1; index++){
+		struct Env* env = envs + index;
+		env->env_id = 0;
+		env->env_link = env + 1;
 	}
+	struct Env* last_env = envs + NENV - 1;
+	last_env->env_id = 0;
+	last_env->env_link = NULL;
 	// Per-CPU part of the initialization
 	env_init_percpu();
 }
@@ -391,14 +396,13 @@ env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
 	struct Env* e;
-	if (env_alloc(&e, 0) < 0){
-		panic("env_create: %e", -1);
+	int r = env_alloc(&e, 0);
+	if (r < 0) {
+		panic("env_create failed %e", r);
 		return;
 	}
-	e->env_type = type;
-	cprintf("env_create before load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
 	load_icode(e, binary);
-	cprintf("env_create after load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
+	e->env_type = type;
 }
 
 //
@@ -530,13 +534,11 @@ env_run(struct Env *e)
 	if (curenv != e){
 		if (curenv && curenv->env_status == ENV_RUNNING)
 			curenv->env_status = ENV_RUNNABLE;
-		curenv = e;
-		e->env_status = ENV_RUNNING;
-		e->env_runs++;
-		cprintf("env pgdir %08x and id %08x\n",  e->env_pgdir, e->env_id);
-		lcr3(PADDR(e->env_pgdir));
 	}
-	unlock_kernel();
+	curenv = e;
+	e->env_status = ENV_RUNNING;
+	e->env_runs++;
+	lcr3(PADDR(e->env_pgdir));
 	env_pop_tf(&e->env_tf);
 	// LAB 3: Your code here.
 }

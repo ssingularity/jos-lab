@@ -373,6 +373,7 @@ page_fault_handler(struct Trapframe *tf)
 	// Handle kernel-mode page faults.
 
 	// LAB 3: Your code here.
+	// kernel state 是不可能pagefault的，因为在kernel中已经做了所有的page映射
 	if ((tf->tf_cs & 0x3) == 0) panic("pagefault in kernel state");
 
 	// We've already handled kernel-mode exceptions, so if we get here,
