@@ -12,6 +12,7 @@
 #include <kern/trap.h>
 #include <kern/monitor.h>
 
+//在mem_init中初始化并映射了
 struct Env *envs = NULL;		// All environments
 struct Env *curenv = NULL;		// The current env
 static struct Env *env_free_list;	// Free environment list
@@ -118,6 +119,7 @@ env_init(void)
 	// LAB 3: Your code here.
 	for (int i=NENV-1; i>=0; --i){
 		envs[i].env_link = env_free_list;
+		envs[i].env_id = 0;
 		env_free_list = &envs[i];
 	}
 	// Per-CPU part of the initialization
@@ -377,11 +379,13 @@ env_create(uint8_t *binary, enum EnvType type)
 {
 	// LAB 3: Your code here.
 	struct Env* e;
-	env_alloc(&e, 0);
-	e->env_type = type;
-	cprintf("env_create before load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
+	int r = env_alloc(&e, 0);
+	if (r < 0) {
+		panic("env_create failed %e", r);
+		return;
+	}
 	load_icode(e, binary);
-	cprintf("env_create after load_icode env %08x pgdir %08x\n",  e->env_id, e->env_pgdir);
+	e->env_type = type;
 }
 
 //
@@ -499,13 +503,11 @@ env_run(struct Env *e)
 	if (curenv != e){
 		if (curenv && curenv->env_status == ENV_RUNNING)
 			curenv->env_status = ENV_RUNNABLE;
-		curenv = e;
-		e->env_status = ENV_RUNNING;
-		e->env_runs++;
-		cprintf("env pgdir %08x and id %08x\n",  e->env_pgdir, e->env_id);
-		lcr3(PADDR(e->env_pgdir));
 	}
-
+	curenv = e;
+	e->env_status = ENV_RUNNING;
+	e->env_runs++;
+	lcr3(PADDR(e->env_pgdir));
 	env_pop_tf(&e->env_tf);
 	// LAB 3: Your code here.
 }
