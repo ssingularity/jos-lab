@@ -1,3 +1,41 @@
 Question1：
 不需要，因为这个是用户态的处理只要把保存了得状态重置回来就行，不会发生错误
 
+Challenge! The block cache has no eviction policy. Once a block gets faulted 
+in to it, it never gets removed and will remain in memory forevermore. Add
+eviction to the buffer cache. Using the PTE_A "accessed" bits in the page tables, 
+which the hardware sets on any access to a page, you can track approximate usage of 
+disk blocks without the need to modify every place in the code that accesses the 
+disk map region. Be careful with dirty blocks.
+
+记录一个已经分配过的block的全局变量，然后实现一个evict函数，每次分配新的块的时候判断该全局变量是否超过指定阈值，
+如果超过就调用evict函数，清除指定数量未被访问过的内存块，将它们放回磁盘
+
+evict 函数如下：
+void 
+evict(int to_evict_number){
+	int evicted_number = 0;
+	uintptr_t start = DISKMAP + 2 * PGSIZE;
+	while (start < DISKMAP + DISKSIZE && evicted_number < to_evict_number){
+		if(va_is_mapped((void*)start) && (uvpt[PGNUM(start)] & PTE_A)==0){
+			if(va_is_dirty((void*)start)) flush_block((void*)start);
+			sys_page_unmap(0, (void*)start);
+			evicted_number++;
+		}
+		start += PGSIZE;
+	}
+	allocated_num -= evicted_number;
+}
+
+函数调用如下：
+static void
+bc_pgfault(struct UTrapframe *utf)
+{
+    ....
+    ....
+	if(allocated_num >= threshold){
+		evict_block(10);
+	}
+    ....
+    ....
+}

@@ -1,5 +1,22 @@
-
 #include "fs.h"
+
+int threshold = 1024;
+int allocated_num = 0;
+
+void 
+evict(int to_evict_number){
+	int evicted_number = 0;
+	uintptr_t start = DISKMAP + 2 * PGSIZE;
+	while (start < DISKMAP + DISKSIZE && evicted_number < to_evict_number){
+		if(va_is_mapped((void*)start) && (uvpt[PGNUM(start)] & PTE_A)==0){
+			if(va_is_dirty((void*)start)) flush_block((void*)start);
+			sys_page_unmap(0, (void*)start);
+			evicted_number++;
+		}
+		start += PGSIZE;
+	}
+	allocated_num -= evicted_number;
+}
 
 // Return the virtual address of this disk block.
 void*
@@ -32,7 +49,9 @@ bc_pgfault(struct UTrapframe *utf)
 	void *addr = (void *) utf->utf_fault_va;
 	uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
 	int r;
-
+	if(allocated_num >= threshold){
+		evict_block(10);
+	}
 	// Check that the fault was within the block cache region
 	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
 		panic("page fault in FS: eip %08x, va %08x, err %04x",
