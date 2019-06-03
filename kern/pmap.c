@@ -656,15 +656,26 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
-	for (uintptr_t start = (uintptr_t)va; start < ROUNDUP((uintptr_t) va + len, PGSIZE); start = ROUNDDOWN(start+PGSIZE, PGSIZE)) {
-		if (start >= ULIM) {
-			user_mem_check_addr = start;
-			return -1;
+	uint32_t va_start = ROUNDDOWN((uint32_t)va, PGSIZE);
+	uint32_t va_end = ROUNDUP((uint32_t)va+len, PGSIZE);
+	for(uint32_t addr = va_start; addr < va_end; addr+=PGSIZE){
+		pte_t* pte;
+		struct PageInfo* page = page_lookup(env->env_pgdir, (void*)addr, &pte);
+		if(page == NULL || ((*pte) & PTE_P) == 0){
+			if(addr == va_start){
+				user_mem_check_addr = (uintptr_t)va;
+			}else{
+				user_mem_check_addr = (uintptr_t)addr;
+			}
+			return -E_FAULT;
 		}
-		pte_t * pte = pgdir_walk (env->env_pgdir, (void *)start, 0);
-		if (pte == NULL || (*pte & perm) != perm) {
-			user_mem_check_addr = start;
-			return -1;
+		if(((*pte) & perm) == 0 && addr >= ULIM){
+			if(addr == va_start){
+				user_mem_check_addr = (uintptr_t)va;
+			}else{
+				user_mem_check_addr = (uintptr_t)addr;
+			}
+			return -E_FAULT;
 		}
 	}
 	return 0;
