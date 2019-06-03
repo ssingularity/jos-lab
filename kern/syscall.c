@@ -348,9 +348,15 @@ static int
 sys_sbrk(uint32_t inc)
 {
     // LAB3: your code here.
-	region_alloc(curenv, (void *)(curenv->env_ds_bottom - inc), inc);
-	curenv->env_ds_bottom = (uintptr_t) ROUNDDOWN(curenv->env_ds_bottom - inc, PGSIZE);
-	return curenv->env_ds_bottom;
+	if(inc == 0) return curenv->env_break;
+	for(int i = 0; i < ROUNDUP(inc, PGSIZE)/PGSIZE; i++){
+		struct PageInfo* p = page_alloc(1);
+		if(p == NULL) return -E_NO_MEM;
+		int r = page_insert(curenv->env_pgdir, p, (void*)(curenv->env_break + i*PGSIZE), PTE_U | PTE_W);
+		if(r < 0) return r;
+	}
+	curenv->env_break += ROUNDUP(inc, PGSIZE);
+    return curenv->env_break;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.

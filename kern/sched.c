@@ -21,8 +21,7 @@ sched_yield(void)
 	//
 	// If no envs are runnable, but the environment previously
 	// running on this CPU is still ENV_RUNNING, it's okay to
-	// choose that environment. Make sure curenv is not null before
-	// dereferencing it.
+	// choose that environment.
 	//
 	// Never choose an environment that's currently running on
 	// another CPU (env_status == ENV_RUNNING). If there are
@@ -30,21 +29,19 @@ sched_yield(void)
 	// below to halt the cpu.
 
 	// LAB 4: Your code here.
-	int i;
-	if(!curenv){
-		for(i = 0; i < NENV; i++){
-			if(envs[i].env_status == ENV_RUNNABLE){
-				env_run(&envs[i]);
-			}
+	envid_t curenv_id;
+	if (curenv == NULL) {
+		for (int i=0; i<NENV; ++i){
+			if (envs[i].env_status == ENV_RUNNABLE) env_run(&envs[i]);
 		}
-	}else{
-		envid_t env_id = ENVX(curenv->env_id);
-		for(i = (env_id + 1) % NENV; i != env_id; i = (i + 1) % NENV){
-			if(envs[i].env_status == ENV_RUNNABLE){
-				env_run(&envs[i]);
-			}
+	}
+	else {
+		envid_t curenv_id = ENVX(curenv->env_id);
+		for (int i=1; i<NENV; ++i){
+			envid_t index = (curenv_id + i) % NENV;
+			if (envs[index].env_status == ENV_RUNNABLE) env_run(&envs[index]);
 		}
-		if(curenv->env_status == ENV_RUNNING){
+		if (curenv->env_status == ENV_RUNNING){
 			env_run(curenv);
 		}
 	}
