@@ -55,7 +55,6 @@ again:
 			// then close the original 'fd'.
 
 			// LAB 5: Your code here.
-			panic("< redirection not implemented");
 			if ((fd = open(t, O_WRONLY|O_CREAT|O_TRUNC)) < 0) {
 				cprintf("open %s for write: %e", t, fd);
 				exit();
