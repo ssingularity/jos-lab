@@ -41,7 +41,7 @@ e1000_rx_init()
 {
 	// Allocate one page for descriptors
 	struct PageInfo* rxPP = page_alloc(ALLOC_ZERO);
-	rx_descs = (struct tx_desc *) page2kva(rxPP);
+	rx_descs = (struct rx_desc *) page2kva(rxPP);
 	// Initialize all descriptors
 	// You should allocate some pages as receive buffer
 	for (int i=0; i<MAX_RX_DESC_NUM; i++){
