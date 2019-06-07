@@ -68,6 +68,9 @@ e1000_tx(const void *buf, uint32_t len)
 {
 	// Send 'len' bytes in 'buf' to ethernet
 	// Hint: buf is a kernel virtual address
+	if (len <= 0 || len > MAX_TX_DESC_NUM) {
+		return -1;
+	}
 	int tail = e1000->TDT;
 	if ((tx_descs[tail].status & E1000_TX_STATUS_DD) == 0) {
 		return -1;

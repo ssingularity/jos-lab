@@ -15,7 +15,7 @@ output(envid_t ns_envid)
 	{
 		int r = sys_ipc_recv(&nsipcbuf);
 		if (r < 0) return;
-		while (sys_net_send((void *)nsipcbuf.pkt.jp_data, nsipcbuf.pkt.jp_len));
+		while (sys_net_send((uint8_t *)nsipcbuf.pkt.jp_data, nsipcbuf.pkt.jp_len));
 	}
 	
 }
