@@ -66,6 +66,15 @@ struct tx_desc {
 #define E1000_TX_CMD_EOP (1U)
 #define E1000_TX_CMD_RS (4U)
 #define E1000_TX_STATUS_DD (1U)
+#define MAX_TX_DESC_NUM (PGSIZE/sizeof(struct tx_desc))
+#define MAX_TX_PKT_LEN 1518
+
+struct tx_pkt {
+    uint8_t content[MAX_TX_PKT_LEN];
+};
+
+struct tx_pkt tx_pkt_buffer[MAX_TX_DESC_NUM] __attribute__((aligned(16)));
+
 
 struct rx_desc {
 	uint64_t addr;
@@ -77,8 +86,9 @@ struct rx_desc {
 };
 
 #define E1000_RX_STATUS_DD (1U)
+#define MAX_RX_DESC_NUM (PGSIZE / sizeof(struct rx_desc))
 
-volatile struct E1000 *e1000;
+volatile struct E1000 * e1000;
 int pci_e1000_attach(struct pci_func *pcif);
 int e1000_tx_init();
 int e1000_tx(const void *buf, uint32_t len);
