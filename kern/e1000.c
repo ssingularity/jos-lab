@@ -51,6 +51,7 @@ e1000_rx_init()
 	// Look kern/e1000.h to find useful definations
 	e1000->RAL = QEMU_MAC_LOW;
 	e1000->RAH = QEMU_MAC_HIGH;
+	e1000->RAH |= E1000_RAH_AV;
 	e1000->RDBAL = PADDR(rx_descs);
 	e1000->RDBAH = 0;
 	e1000->RDLEN = PGSIZE;
@@ -110,12 +111,10 @@ e1000_rx(void *buf, uint32_t len)
 	// give it back to hardware by modifying RDT
 	int tail = (e1000->RDT + 1) % MAX_RX_DESC_NUM;
 	if ((rx_descs[tail].status & E1000_RX_STATUS_DD) == 0) {
-		cprintf("status error\n");
+		cprintf("status error at %d\n", tail);
 		return -E_AGAIN;
 	}
-	memmove(buf, rx_pkt_buffer[tail].content, len);
-    rx_descs[tail].length = len;
-    rx_descs[tail].status &= ~E1000_RX_STATUS_DD;
+	memmove(buf, rx_pkt_buffer[tail].content, rx_descs[tail].length);
     e1000->RDT = tail;
-	return len;
+	return rx_descs[tail].length;
 }
