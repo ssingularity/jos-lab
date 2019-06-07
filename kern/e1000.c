@@ -46,7 +46,6 @@ e1000_rx_init()
 	// You should allocate some pages as receive buffer
 	for (int i=0; i<MAX_RX_DESC_NUM; i++){
 		rx_descs[i].addr = PADDR(rx_pkt_buffer[i].content);
-		rx_descs[i].status |= E1000_RX_STATUS_DD;
 	}
 	// Set hardward registers
 	// Look kern/e1000.h to find useful definations
@@ -109,6 +108,18 @@ e1000_rx(void *buf, uint32_t len)
 	// the packet
 	// Do not forget to reset the decscriptor and
 	// give it back to hardware by modifying RDT
-
-	return 0;
+	if (len <= 0 || len > MAX_RX_DESC_NUM) {
+		cprintf("length error\n");
+		return -1;
+	}
+	int tail = (e1000->RDT + 1) % MAX_RX_DESC_NUM;
+	if ((rx_descs[tail].status & E1000_RX_STATUS_DD) == 0) {
+		cprintf("status error\n");
+		return -E_AGAIN;
+	}
+	memmove(buf, rx_pkt_buffer[tail].content, len);
+    rx_descs[tail].length = len;
+    rx_descs[tail].status &= ~E1000_RX_STATUS_DD;
+    e1000->TDT = tail;
+	return len;
 }

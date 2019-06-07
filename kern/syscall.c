@@ -400,7 +400,7 @@ sys_net_recv(void *buf, uint32_t len)
 	// Check the user permission to [buf, buf + len]
 	// Call e1000_rx to fill the buffer
 	// Hint: e1000_rx only accept kernel virtual address
-	return -1;
+	return e1000_rx(buf, len);
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -451,6 +451,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_time_msec();
 		case SYS_net_send:
 			return sys_net_send((void *) a1, (uint32_t) a2);
+		case SYS_net_recv:
+			return sys_net_recv((void *) a1, (uint32_t) a2);
 		case NSYSCALLS:
 		default:
 			return -E_INVAL;
