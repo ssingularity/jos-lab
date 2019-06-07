@@ -2,6 +2,7 @@
 #define JOS_KERN_E1000_H
 
 #include <kern/pci.h>
+#include <inc/mmu.h>
 
 #define E1000_VID 0x8086
 #define E1000_DID 0x100e
