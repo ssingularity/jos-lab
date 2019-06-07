@@ -60,8 +60,6 @@ pci_e1000_attach(struct pci_func *pcif)
 	cprintf("E1000 STATUS: %08x\n", e1000->STATUS);
 	e1000_tx_init();
 	e1000_rx_init();
-	char buf[10] = "0123456789";
-	e1000_tx(buf, 10);
 	return 0;
 }
 
