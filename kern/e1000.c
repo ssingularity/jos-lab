@@ -40,12 +40,26 @@ int
 e1000_rx_init()
 {
 	// Allocate one page for descriptors
-
+	struct PageInfo* rxPP = page_alloc(ALLOC_ZERO);
+	rx_descs = (struct tx_desc *) page2kva(rxPP);
 	// Initialize all descriptors
 	// You should allocate some pages as receive buffer
-
+	for (int i=0; i<MAX_RX_DESC_NUM; i++){
+		rx_descs[i].addr = PADDR(rx_pkt_buffer[i].content);
+		rx_descs[i].status |= E1000_RX_STATUS_DD;
+	}
 	// Set hardward registers
 	// Look kern/e1000.h to find useful definations
+	e1000->RAL = QEMU_MAC_LOW;
+	e1000->RAH = QEMU_MAC_HIGH;
+	e1000->RDBAL = PADDR(rx_descs);
+	e1000->RDBAH = 0;
+	e1000->RDLEN = PGSIZE;
+	e1000->RDH = 1;
+	e1000->RDT = 0;
+	e1000->RCTL |= E1000_RCTL_EN;
+    e1000->RCTL |= E1000_RCTL_SECRC;
+    e1000->RCTL |= E1000_RCTL_BSIZE_2048;
 
 	return 0;
 }

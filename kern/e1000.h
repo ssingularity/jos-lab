@@ -88,6 +88,14 @@ struct rx_desc {
 
 #define E1000_RX_STATUS_DD (1U)
 #define MAX_RX_DESC_NUM (PGSIZE / sizeof(struct rx_desc))
+#define MAX_RX_PKT_LEN 2048
+
+struct rx_pkt {
+    uint8_t content[MAX_RX_PKT_LEN];
+};
+
+struct rx_pkt rx_pkt_buffer[MAX_RX_DESC_NUM] __attribute__((aligned(16)));
+
 
 volatile struct E1000 * e1000;
 int pci_e1000_attach(struct pci_func *pcif);
