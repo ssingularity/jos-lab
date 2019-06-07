@@ -68,6 +68,7 @@ bc_pgfault(struct UTrapframe *utf)
 	//
 	// LAB 5: you code here:
 	addr = ROUNDDOWN(addr, PGSIZE);
+	// 具体的内存地址由OS随机分配，但是内存里填的是第i个磁盘block的内容，从而让虚拟地址和磁盘block一一对应
 	sys_page_alloc(0, addr, PTE_P | PTE_U | PTE_W);
 	ide_read(blockno * BLKSECTS, addr, BLKSECTS);
 

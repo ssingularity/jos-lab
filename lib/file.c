@@ -23,7 +23,7 @@ fsipc(unsigned type, void *dstva)
 
 	if (debug)
 		cprintf("[%08x] fsipc %d %08x\n", thisenv->env_id, type, *(uint32_t *)&fsipcbuf);
-
+	// ipc_send 之后就跟着 ipc_recv 等待ipc的响应
 	ipc_send(fsenv, type, &fsipcbuf, PTE_P | PTE_W | PTE_U);
 	return ipc_recv(NULL, dstva, NULL);
 }

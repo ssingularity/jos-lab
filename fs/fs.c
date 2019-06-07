@@ -113,6 +113,7 @@ fs_init(void)
 	bc_init();
 
 	// Set "super" to point to the super block.
+	// 访问了暂时没有被map的虚拟地址，会调用对应的pagefault
 	super = diskaddr(1);
 	check_super();
 

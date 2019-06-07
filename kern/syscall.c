@@ -304,6 +304,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 		if(PGOFF(srcva) || (perm & (PTE_U | PTE_P)) != (PTE_U | PTE_P) || (perm & (~PTE_SYSCALL)))
 		return -E_INVAL;
 		pte_t *pte;
+		// 可以用PageInfo代表对应的物理页
 		struct PageInfo *pg;
 		if(!(pg = page_lookup(curenv->env_pgdir, srcva, &pte)))
 		return -E_INVAL;
