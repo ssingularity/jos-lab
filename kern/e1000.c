@@ -81,7 +81,7 @@ e1000_tx(const void *buf, uint32_t len)
 {
 	// Send 'len' bytes in 'buf' to ethernet
 	// Hint: buf is a kernel virtual address
-	if (len <= 0 || len > MAX_TX_DESC_NUM) {
+	if (len <= 0 || len > MAX_TX_PKT_LEN) {
 		cprintf("length error\n");
 		return -1;
 	}
@@ -108,7 +108,7 @@ e1000_rx(void *buf, uint32_t len)
 	// the packet
 	// Do not forget to reset the decscriptor and
 	// give it back to hardware by modifying RDT
-	if (len <= 0 || len > MAX_RX_DESC_NUM) {
+	if (len <= 0 || len > MAX_RX_PKT_LEN) {
 		cprintf("length error\n");
 		return -1;
 	}
