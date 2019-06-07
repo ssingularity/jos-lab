@@ -4,7 +4,6 @@
 #include <inc/error.h>
 
 static struct E1000 *base;
-
 struct tx_desc *tx_descs;
 #define N_TXDESC (PGSIZE / sizeof(struct tx_desc))
 
@@ -43,7 +42,9 @@ pci_e1000_attach(struct pci_func *pcif)
 {
 	// Enable PCI function
 	// Map MMIO region and save the address in 'base;
-
+	pci_func_enable(pcif);
+	e1000 = (struct E1000*)mmio_map_region(pcif->reg_base[0], pcif->reg_size[0]);
+	cprintf("E1000 STATUS: %08x\n", e1000->STATUS);
 	e1000_tx_init();
 	e1000_rx_init();
 	return 0;

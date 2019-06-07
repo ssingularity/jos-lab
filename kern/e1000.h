@@ -78,6 +78,7 @@ struct rx_desc {
 
 #define E1000_RX_STATUS_DD (1U)
 
+volatile struct E1000 *e1000;
 int pci_e1000_attach(struct pci_func *pcif);
 int e1000_tx_init();
 int e1000_tx(const void *buf, uint32_t len);
