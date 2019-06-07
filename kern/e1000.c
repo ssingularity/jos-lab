@@ -16,7 +16,7 @@ e1000_tx_init()
 	// Initialize all descriptors
 	for (int i=0; i<MAX_TX_DESC_NUM; i++){
 		tx_descs[i].addr = PADDR(tx_pkt_buffer[i].content);
-		tx_descs[i].status != E1000_TX_STATUS_DD;
+		tx_descs[i].status |= E1000_TX_STATUS_DD;
 	}
 	// Set hardward registers
 	// Look kern/e1000.h to find useful definations
@@ -69,10 +69,12 @@ e1000_tx(const void *buf, uint32_t len)
 	// Send 'len' bytes in 'buf' to ethernet
 	// Hint: buf is a kernel virtual address
 	if (len <= 0 || len > MAX_TX_DESC_NUM) {
+		cprintf("length error\n");
 		return -1;
 	}
 	int tail = e1000->TDT;
 	if ((tx_descs[tail].status & E1000_TX_STATUS_DD) == 0) {
+		cprintf("status error\n");
 		return -1;
 	}
 	memmove(tx_pkt_buffer[tail].content, buf, len);
