@@ -46,6 +46,7 @@ e1000_rx_init()
 	// You should allocate some pages as receive buffer
 	for (int i=0; i<MAX_RX_DESC_NUM; i++){
 		rx_descs[i].addr = PADDR(rx_pkt_buffer[i].content);
+		rx_descs[i].status |= E1000_RX_STATUS_DD;
 	}
 	// Set hardward registers
 	// Look kern/e1000.h to find useful definations
