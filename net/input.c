@@ -16,7 +16,7 @@ input(envid_t ns_envid)
 	// another packet in to the same physical page.
 	char buf[2048];
 	while(true){
-		while(sys_net_recv(buf, 2048) < 0) sys_yield();
+		if (sys_net_recv(buf, 2048) < 0) return;
 		sys_page_alloc(0, &nsipcbuf, PTE_P|PTE_W|PTE_U);
 		nsipcbuf.pkt.jp_len=1518;
 		memmove(nsipcbuf.pkt.jp_data, buf, 2048);
