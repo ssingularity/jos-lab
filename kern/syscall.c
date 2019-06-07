@@ -390,7 +390,7 @@ sys_net_send(const void *buf, uint32_t len)
 	// Check the user permission to [buf, buf + len]
 	// Call e1000_tx to send the packet
 	// Hint: e1000_tx only accept kernel virtual address
-	return -1;
+	return e1000_tx(buf, len);
 }
 
 int
