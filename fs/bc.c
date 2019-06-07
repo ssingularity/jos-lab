@@ -1,5 +1,22 @@
-
 #include "fs.h"
+
+int threshold = 1024;
+int allocated_num = 0;
+
+void 
+evict(int to_evict_number){
+	int evicted_number = 0;
+	uintptr_t start = DISKMAP + 2 * PGSIZE;
+	while (start < DISKMAP + DISKSIZE && evicted_number < to_evict_number){
+		if(va_is_mapped((void*)start) && (uvpt[PGNUM(start)] & PTE_A)==0){
+			if(va_is_dirty((void*)start)) flush_block((void*)start);
+			sys_page_unmap(0, (void*)start);
+			evicted_number++;
+		}
+		start += PGSIZE;
+	}
+	allocated_num -= evicted_number;
+}
 
 // Return the virtual address of this disk block.
 void*
@@ -32,7 +49,9 @@ bc_pgfault(struct UTrapframe *utf)
 	void *addr = (void *) utf->utf_fault_va;
 	uint32_t blockno = ((uint32_t)addr - DISKMAP) / BLKSIZE;
 	int r;
-
+	if(allocated_num >= threshold){
+		evict(10);
+	}
 	// Check that the fault was within the block cache region
 	if (addr < (void*)DISKMAP || addr >= (void*)(DISKMAP + DISKSIZE))
 		panic("page fault in FS: eip %08x, va %08x, err %04x",
@@ -48,6 +67,10 @@ bc_pgfault(struct UTrapframe *utf)
 	// the disk.
 	//
 	// LAB 5: you code here:
+	addr = ROUNDDOWN(addr, PGSIZE);
+	sys_page_alloc(0, addr, PTE_P | PTE_U | PTE_W);
+	ide_read(blockno * BLKSECTS, addr, BLKSECTS);
+
 
 	// Clear the dirty bit for the disk block page since we just read the
 	// block from disk
@@ -77,7 +100,11 @@ flush_block(void *addr)
 		panic("flush_block of bad va %08x", addr);
 
 	// LAB 5: Your code here.
-	panic("flush_block not implemented");
+	addr = ROUNDDOWN(addr, PGSIZE);
+	if (va_is_mapped(addr) && va_is_dirty(addr)){
+		ide_write(blockno * BLKSECTS, addr, BLKSECTS);
+		sys_page_map(0, addr, 0, addr, PTE_SYSCALL);
+	}
 }
 
 // Test that the block cache works, by smashing the superblock and
