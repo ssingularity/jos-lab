@@ -64,8 +64,8 @@ i386_init(void)
 	time_init();
 	pci_init();
 
-	char buf[10] = "0123456789";
-	cprintf("e1000 tx %d\n", e1000_tx(buf, 10));
+	// char buf[10] = "0123456789";
+	// cprintf("e1000 tx %d\n", e1000_tx(buf, 10));
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:

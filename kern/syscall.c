@@ -449,6 +449,8 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 			return sys_env_set_trapframe((envid_t) a1, (struct Trapframe *) a2);
 		case SYS_time_msec:
 			return sys_time_msec();
+		case SYS_net_send:
+			return sys_net_send((void *) a1, (uint32_t) a2);
 		case NSYSCALLS:
 		default:
 			return -E_INVAL;
