@@ -60,7 +60,6 @@ e1000_rx_init()
 	e1000->RCTL |= E1000_RCTL_EN;
     e1000->RCTL |= E1000_RCTL_SECRC;
     e1000->RCTL |= E1000_RCTL_BSIZE_2048;
-
 	return 0;
 }
 
@@ -110,11 +109,12 @@ e1000_rx(void *buf, uint32_t len)
 	// Do not forget to reset the decscriptor and
 	// give it back to hardware by modifying RDT
 	int tail = (e1000->RDT + 1) % MAX_RX_DESC_NUM;
-	if ((rx_descs[tail].status & E1000_RX_STATUS_DD) == 0) {
+	if ((!rx_descs[tail].status & E1000_RX_STATUS_DD)) {
 		cprintf("status error at %d\n", tail);
 		return -E_AGAIN;
 	}
 	memmove(buf, rx_pkt_buffer[tail].content, rx_descs[tail].length);
+	rx_descs[tail].status &= ~E1000_RX_STATUS_DD;
     e1000->RDT = tail;
 	return rx_descs[tail].length;
 }
