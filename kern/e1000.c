@@ -51,7 +51,6 @@ e1000_rx_init()
 	// Look kern/e1000.h to find useful definations
 	e1000->RAL = QEMU_MAC_LOW;
 	e1000->RAH = QEMU_MAC_HIGH;
-	e1000->RAH |= E1000_RAH_AV;
 	e1000->RDBAL = PADDR(rx_descs);
 	e1000->RDBAH = 0;
 	e1000->RDLEN = PGSIZE;
@@ -86,7 +85,7 @@ e1000_tx(const void *buf, uint32_t len)
 		return -1;
 	}
 	int tail = e1000->TDT;
-	if ((tx_descs[tail].status & E1000_TX_STATUS_DD) == 0) {
+	if (!(tx_descs[tail].status & E1000_TX_STATUS_DD)) {
 		cprintf("status error\n");
 		return -1;
 	}

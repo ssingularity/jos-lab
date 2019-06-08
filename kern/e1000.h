@@ -51,7 +51,6 @@ struct E1000 {
 #define E1000_RCTL_BSIZE_2048        (0U << 16)
 #define E1000_RCTL_SECRC             (1U << 26)
 
-#define E1000_RAH_AV  0x80000000
 #define QEMU_MAC_LOW 0x12005452
 #define QEMU_MAC_HIGH 0x5634
 
